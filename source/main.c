@@ -43,6 +43,85 @@ void PWM_off() {
     TCCR3A = 0x00;
     TCCR3B = 0x00;
 }
+enum states {initial,start,waitincrease,waitdecrease,waitoff} state;
+
+double freq[8] = {261.63, 293.66, 329.64, 349.23, 392, 440, 493.88, 523.25};
+unsigned char index=0;
+
+void Tick(){
+	switch(state){
+		case initial:
+			if((~PINA & 0x04) == 0x04){
+				state = start;
+			}
+			else{
+				state = initial;
+			}
+			break;
+		case start:
+			if((~PINA & 0x01) == 0x01){
+				state = waitincrease;
+			}
+			else if((~PINA & 0x02) == 0x02){
+				state = waitdecrease;
+			}
+			else if((~PINA & 0x04) == 0x04){
+				state = waitoff;
+			}
+			else{
+				state = start;
+			}
+			break;
+		case waitincrease:
+			if((~PINA & 0x01) == 0x01){
+				state = waitincrease;
+			}
+			else{
+				state = start;	
+			}
+			break;
+		case waitdecrease:
+			if((~PINA & 0x02) == 0x02){
+				state = waitdecrease;
+			}
+			else{
+				state = start;
+			}
+			break;
+		case waitoff:
+			if((~PINA & 0x04) == 0x04){
+				state = waitoff;
+			}
+			else{
+				state = initial;
+			}
+			break;
+	}
+	switch(state){
+		case initial:
+			index=4;
+			break;
+		case start:
+			PWM_on();
+			set_PWM(freq[index]);
+			break;
+		case waitincrease:
+			if(index<7){
+				index++;
+			}
+			set_PWM(freq[index]);
+			break;
+		case waitdecrease:
+			if(index>0){
+				index--;
+			}
+			set_PWM(freq[index]);
+			break;
+		case waitoff:
+			PWM_off();
+			break;
+	}
+}
 
 
 int main(void) {
@@ -51,19 +130,9 @@ int main(void) {
     DDRB = 0xFF; PORTB = 0x00;
     /* Insert your solution below */
     PWM_on();
+    state = initial;
     while (1) {
-	if((~PINA & 0x01) == 0x01){
-		set_PWM(261.34);
-	}
-	else if((~PINA & 0x02) == 0x02){
-		set_PWM(293.66);
-	}
-	else if((~PINA & 0x04) == 0x04){
-		set_PWM(329.63);
-	}
-	else{
-		set_PWM(0);
-	}
+	Tick();
     }
     PWM_off();
     return 1;
