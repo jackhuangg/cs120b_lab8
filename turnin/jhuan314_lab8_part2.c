@@ -1,7 +1,7 @@
 /*	Author: Jack Huang
  *  Partner(s) Name: 
  *	Lab Section:
- *	Assignment: Lab #8  Exercise #1
+ *	Assignment: Lab #8  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *      https://drive.google.com/drive/folders/1JBIqqJb-m900203LVLXI8yLaMciH493w?usp=sharing
  *	I acknowledge all content contained herein, excluding template or example
