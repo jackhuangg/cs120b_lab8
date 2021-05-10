@@ -1,7 +1,7 @@
 /*	Author: Jack Huang
  *  Partner(s) Name: 
  *	Lab Section:
- *	Assignment: Lab #8  Exercise 2
+ *	Assignment: Lab #8  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *      https://drive.google.com/drive/folders/1JBIqqJb-m900203LVLXI8yLaMciH493w?usp=sharing
  *	I acknowledge all content contained herein, excluding template or example
@@ -80,54 +80,99 @@ void PWM_off() {
     TCCR3A = 0x00;
     TCCR3B = 0x00;
 }
-enum states {smstart,initial,start,wait} state;
+enum states {smstart,initial,start,waitincrease,waitdecrease,waitoff,waitdepress} state;
 
-double freq[] = {261.63,0,261.63,0,293.66,293.66,0,261.63,261.63,0,349.23,349.23,0,329.63,329.63,329.63,0,261.63,0,261.63,0,293.66,293.66,0,261.63,261.63,0,392,392,0,349.23,349.23,349.23,0,261.63,0,261.63,0,524,524,0,440,440,0,349.23,349.23,0,329.63,329.63,0,293.66,293.66,0,466.16,0,466.16,0,440,440,0,349.23,349.23,0,392,392,0,349.23,349.23,349.23,349.23,0};
+double freq[] = {261.63, 293.66, 329.64, 349.23, 392, 440, 493.88, 523.25};
 unsigned char i=0;
+unsigned char on=0;
 
 void Tick(){
 	switch(state){
 		case smstart:
 			state = initial;
-			break;
 		case initial:
 			if((~PINA & 0x07) == 0x04){
+				on=1;
+			}
 				state = start;
-			}
-			else{
-				state = initial;
-			}
 			break;
 		case start:
-			if(i<70){
+			if((~PINA & 0x07) == 0x01){
+				state = waitincrease;
+			}
+			else if((~PINA & 0x07) == 0x02){
+				state = waitdecrease;
+			}
+			else if((~PINA & 0x07) == 0x04){
+				on=0;
+				state = waitoff;
+			}
+			else{
 				state = start;
 			}
+			break;
+		case waitincrease:
+			if((~PINA & 0x07) == 0x01){
+				state = waitdepress;
+			}
 			else{
-				state = wait;
+				state = start;	
 			}
 			break;
-		case wait:
-			if((~PINA & 0x07) == 0x04){
-				state = wait;
+		case waitdecrease:
+			if((~PINA & 0x07) == 0x02){
+				state = waitdepress;
 			}
 			else{
+				state = start;
+			}
+			break;
+		case waitoff:
+			if((~PINA & 0x07) == 0x04){
+				state = waitoff;
+			}
+			else if((~PINA & 0x07) == 0x00){
 				state = initial;
 			}
 			break;
+		case waitdepress:
+			if((~PINA & 0x07) == 0x00){
+				state = start;
+			}
+			else{
+				state = waitdepress;
+			}
 	}
 	switch(state){
 		case smstart:
 			break;
 		case initial:
-			set_PWM(0);
-			i=0;
 			break;
 		case start:
-			set_PWM(freq[i]);
-			i++;
+			if(on){
+				set_PWM(freq[i]);
+			}
 			break;
-		case wait:
+		case waitincrease:
+			if(i<7){
+				i++;
+			}
+			if(on){
+				set_PWM(freq[i]);
+			}
+			break;
+		case waitdecrease:
+			if(i>0){
+				i--;
+			}
+			if(on){
+				set_PWM(freq[i]);
+			}
+			break;
+		case waitoff:
 			set_PWM(0);
+			break;
+		case waitdepress:
 			break;
 	}
 }
@@ -139,7 +184,7 @@ int main(void) {
     DDRB = 0xFF; PORTB = 0x00;
     /* Insert your solution below */
     PWM_on();
-    TimerSet(170);
+    TimerSet(300);
     TimerOn();
     state = smstart;
     while (1) {

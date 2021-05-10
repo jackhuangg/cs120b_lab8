@@ -84,6 +84,7 @@ enum states {smstart,initial,start,waitincrease,waitdecrease,waitoff,waitdepress
 
 double freq[] = {261.63, 293.66, 329.64, 349.23, 392, 440, 493.88, 523.25};
 unsigned char i=0;
+unsigned char on=0;
 
 void Tick(){
 	switch(state){
@@ -91,11 +92,9 @@ void Tick(){
 			state = initial;
 		case initial:
 			if((~PINA & 0x07) == 0x04){
+				on=1;
+			}
 				state = start;
-			}
-			else{
-				state = initial;
-			}
 			break;
 		case start:
 			if((~PINA & 0x07) == 0x01){
@@ -105,6 +104,7 @@ void Tick(){
 				state = waitdecrease;
 			}
 			else if((~PINA & 0x07) == 0x04){
+				on=0;
 				state = waitoff;
 			}
 			else{
@@ -147,22 +147,27 @@ void Tick(){
 		case smstart:
 			break;
 		case initial:
-			i=1;
 			break;
 		case start:
-			set_PWM(freq[i]);
+			if(on){
+				set_PWM(freq[i]);
+			}
 			break;
 		case waitincrease:
 			if(i<7){
 				i++;
 			}
-			set_PWM(freq[i]);
+			if(on){
+				set_PWM(freq[i]);
+			}
 			break;
 		case waitdecrease:
 			if(i>0){
 				i--;
 			}
-			set_PWM(freq[i]);
+			if(on){
+				set_PWM(freq[i]);
+			}
 			break;
 		case waitoff:
 			set_PWM(0);
